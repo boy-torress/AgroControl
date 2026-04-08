@@ -26,13 +26,15 @@ data class CultivoEntity(
     val hectareas: Double,
     val fechaSiembra: Long,
     val region: String,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     val etapaActual: String,
     val activo: Boolean = true
 ) {
-    fun toDomain() = Cultivo(id, agricultorId, tipoCultivo, hectareas, fechaSiembra, region, EtapaCultivo.valueOf(etapaActual), activo)
+    fun toDomain() = Cultivo(id, agricultorId, tipoCultivo, hectareas, fechaSiembra, region, latitude, longitude, EtapaCultivo.valueOf(etapaActual), activo)
 }
 
-fun Cultivo.toEntity() = CultivoEntity(id, agricultorId, tipoCultivo, hectareas, fechaSiembra, region, etapaActual.name, activo)
+fun Cultivo.toEntity() = CultivoEntity(id, agricultorId, tipoCultivo, hectareas, fechaSiembra, region, latitude, longitude, etapaActual.name, activo)
 
 @Entity(tableName = "historial_etapas")
 data class HistorialEtapaEntity(
@@ -91,3 +93,14 @@ data class AlertaEntity(
 }
 
 fun Alerta.toEntity() = AlertaEntity(id, agricultorId, tipo.name, severidad.name, descripcion, recomendacion, fechaEstimada, leida, fechaCreacion)
+
+// ─── Chat IA ──────────────────────────────────────────────────────────────────
+@Entity(tableName = "chat_mensajes")
+data class ChatMensajeEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val usuarioId: Long,
+    val rol: String,           // "user" | "assistant"
+    val contenido: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
+

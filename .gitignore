@@ -14,3 +14,6 @@ app/build/
 .externalNativeBuild
 .cxx
 local.properties
+*.log
+credenciales_roles.txt
+google-services.json

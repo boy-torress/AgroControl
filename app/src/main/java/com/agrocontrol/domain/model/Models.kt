@@ -27,6 +27,8 @@ data class Cultivo(
     val hectareas: Double,
     val fechaSiembra: Long,        // epoch millis
     val region: String,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     val etapaActual: EtapaCultivo = EtapaCultivo.SIEMBRA,
     val activo: Boolean = true
 )

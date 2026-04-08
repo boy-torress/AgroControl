@@ -76,6 +76,13 @@ class CultivoViewModel @Inject constructor(
         }
     }
 
+    fun actualizarUbicacion(latitude: Double, longitude: Double) {
+        val cultivo = _uiState.value.cultivoActivo ?: return
+        viewModelScope.launch {
+            cultivoRepo.actualizarUbicacion(cultivo.agricultorId, latitude, longitude)
+        }
+    }
+
     fun predecirRendimiento() {
         val cultivo = _uiState.value.cultivoActivo ?: return
         viewModelScope.launch {

@@ -105,5 +105,5 @@ class DashboardViewModel @Inject constructor(
         loadClima(region)
     }
 
-    fun logout() = viewModelScope.launch { session.clearSession() }
+    fun logout() = viewModelScope.launch { session.clear() }
 }

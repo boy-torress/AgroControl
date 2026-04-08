@@ -66,5 +66,5 @@ class AgronomoViewModel @Inject constructor(
         }
     }
 
-    fun logout() = viewModelScope.launch { session.clearSession() }
+    fun logout() = viewModelScope.launch { session.clear() }
 }

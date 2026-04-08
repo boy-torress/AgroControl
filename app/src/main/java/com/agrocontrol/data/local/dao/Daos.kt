@@ -108,3 +108,17 @@ interface AlertaDao {
     @Query("UPDATE alertas SET leida = 1 WHERE agricultorId = :agricultorId")
     suspend fun marcarTodasLeidas(agricultorId: Long)
 }
+
+// ─── ChatDao ─────────────────────────────────────────────────────────────────
+@Dao
+interface ChatDao {
+    @Insert
+    suspend fun insert(mensaje: com.agrocontrol.data.local.entities.ChatMensajeEntity)
+
+    @Query("SELECT * FROM chat_mensajes WHERE usuarioId = :usuarioId ORDER BY timestamp ASC")
+    fun getMensajesByUsuario(usuarioId: Long): kotlinx.coroutines.flow.Flow<List<com.agrocontrol.data.local.entities.ChatMensajeEntity>>
+
+    @Query("DELETE FROM chat_mensajes WHERE usuarioId = :usuarioId")
+    suspend fun limpiarChat(usuarioId: Long)
+}
+

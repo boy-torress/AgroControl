@@ -157,11 +157,30 @@ private fun descripcionDiaDesde(precipProb: Int, tempMax: Double): String = when
 // ─── ClimaService con Open-Meteo ─────────────────────────────────────────────
 
 @Singleton
-class ClimaService @Inject constructor() {
+class ClimaService @Inject constructor(@dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context) {
+
+    private val cacheSize = (5 * 1024 * 1024).toLong() // 5 MB
+    private val myCache = okhttp3.Cache(java.io.File(context.cacheDir, "clima_responses"), cacheSize)
+    
+    private val offlineInterceptor = okhttp3.Interceptor { chain ->
+        var request = chain.request()
+        if (!com.agrocontrol.domain.util.isNetworkAvailable(context)) {
+            request = request.newBuilder()
+                .header("Cache-Control", "public, only-if-cached, max-stale=" + 60 * 60 * 24)
+                .build()
+        }
+        chain.proceed(request)
+    }
 
     private val api: OpenMeteoApi by lazy {
+        val okHttpClient = okhttp3.OkHttpClient.Builder()
+            .cache(myCache)
+            .addInterceptor(offlineInterceptor)
+            .build()
+            
         Retrofit.Builder()
             .baseUrl("https://api.open-meteo.com/")
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(OpenMeteoApi::class.java)

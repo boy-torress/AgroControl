@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
 
                 startDestination?.let { dest ->
                     AgroControlNavGraph(
-                        navController = navController,
+                        navController    = navController,
                         startDestination = dest
                     )
                 }
@@ -49,16 +49,21 @@ class MainViewModel @Inject constructor(private val session: SessionManager) : V
 
     init {
         viewModelScope.launch {
-            val userId = session.userId.firstOrNull()
-            val rol = session.userRol.firstOrNull()
-            _startDestination.value = if (userId != null) {
-                when (rol) {
+            val userId           = session.userId.firstOrNull()
+            val rol              = session.userRol.firstOrNull()
+            val hasSeenOnboarding = session.hasSeenOnboarding.firstOrNull() ?: false
+
+            _startDestination.value = when {
+                // Usuario ya logueado → va directo a su pantalla
+                userId != null -> when (rol) {
                     "AGRONOMO"      -> Screen.Agronomo.route
                     "ADMINISTRADOR" -> Screen.AdminPanel.route
                     else            -> Screen.Dashboard.route
                 }
-            } else {
-                Screen.Login.route
+                // Primera vez → Splash → Onboarding → Login
+                !hasSeenOnboarding -> Screen.Splash.route
+                // Ya vio onboarding → Splash → Login
+                else               -> Screen.Splash.route
             }
         }
     }

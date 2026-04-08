@@ -12,9 +12,10 @@ import com.agrocontrol.data.local.entities.*
         HistorialEtapaEntity::class,
         InsumoEntity::class,
         MovimientoEntity::class,
-        AlertaEntity::class
+        AlertaEntity::class,
+        ChatMensajeEntity::class
     ],
-    version = 1,
+    version = 6,
     exportSchema = false
 )
 abstract class AgroControlDatabase : RoomDatabase() {
@@ -24,4 +25,5 @@ abstract class AgroControlDatabase : RoomDatabase() {
     abstract fun insumoDao(): InsumoDao
     abstract fun movimientoDao(): MovimientoDao
     abstract fun alertaDao(): AlertaDao
+    abstract fun chatDao(): ChatDao
 }

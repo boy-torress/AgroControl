@@ -74,5 +74,5 @@ class AdminViewModel @Inject constructor(
         return header + filas
     }
 
-    fun logout() = viewModelScope.launch { session.clearSession() }
+    fun logout() = viewModelScope.launch { session.clear() }
 }

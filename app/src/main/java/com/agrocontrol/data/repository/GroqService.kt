@@ -1,11 +1,16 @@
 package com.agrocontrol.data.repository
 
-import com.agrocontrol.BuildConfig
+import android.content.Context
 import com.agrocontrol.domain.model.*
+import com.agrocontrol.domain.util.KeyProvider
+import com.agrocontrol.domain.util.isNetworkAvailable
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.Cache
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -13,6 +18,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.Header
 import retrofit2.http.POST
+import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -76,7 +82,7 @@ class IAService @Inject constructor() {
             .create(GroqApi::class.java)
     }
 
-    private val authHeader get() = "Bearer ${BuildConfig.GROQ_API_KEY}"
+    private val authHeader get() = "Bearer ${KeyProvider.groqApiKey}"
 
     // ─── Predicción de rendimiento ────────────────────────────────────────────
 
@@ -258,6 +264,41 @@ class IAService @Inject constructor() {
         } catch (e: Exception) {
             Result.failure(Exception("No se pudieron generar alertas: ${e.message}"))
         }
+    }
+
+    // ─── Chat conversacional ──────────────────────────────────────────────────
+
+    suspend fun chat(
+        systemPrompt: String,
+        historial: List<GroqMessage>,
+        userMessage: String
+    ): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val messages = buildList {
+                add(GroqMessage("system", systemPrompt))
+                addAll(historial)
+                add(GroqMessage("user", userMessage))
+            }
+            val response = api.chatCompletion(
+                authorization = authHeader,
+                request = GroqRequest(
+                    messages       = messages,
+                    temperature    = 0.7,
+                    maxTokens      = 800,
+                    responseFormat = null   // texto libre, no JSON
+                )
+            )
+            val respuesta = response.choices.first().message.content.trim()
+            Result.success(respuesta)
+        } catch (e: Exception) {
+            Result.failure(Exception("Error en el chat: ${e.message}"))
+        }
+    }
+
+    private fun isNetworkAvailable(context: Context): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        val activeNetwork = cm.activeNetworkInfo
+        return activeNetwork?.isConnectedOrConnecting == true
     }
 }
 

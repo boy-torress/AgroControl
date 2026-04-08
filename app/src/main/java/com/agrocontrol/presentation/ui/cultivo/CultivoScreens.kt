@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.agrocontrol.presentation.theme.Verde60
 import java.text.SimpleDateFormat
@@ -20,6 +21,8 @@ import java.util.*
 
 val TIPOS_CULTIVO = listOf("Trigo", "Maíz", "Papa", "Tomate", "Lechuga", "Cebolla", "Uva", "Manzana", "Palta", "Arándano", "Otro")
 val REGIONES_CHILE = listOf("Arica y Parinacota", "Tarapacá", "Antofagasta", "Atacama", "Coquimbo", "Valparaíso", "Metropolitana", "O'Higgins", "Maule", "Ñuble", "Biobío", "La Araucanía", "Los Ríos", "Los Lagos", "Aysén", "Magallanes")
+
+data class AtajoCultivo(val icono: String, val titulo: String, val tipo: String, val ha: String, val region: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +38,15 @@ fun RegistroCultivoScreen(
     var tipoDropdownOpen by remember { mutableStateOf(false) }
     var regionDropdownOpen by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
+
+    val sugerencias = remember {
+        listOf(
+            AtajoCultivo("🌾", "Trigo Maule", "Trigo", "10.0", "Maule"),
+            AtajoCultivo("🌽", "Maíz O'Higgins", "Maíz", "5.5", "O'Higgins"),
+            AtajoCultivo("🥔", "Papas Sur", "Papa", "8.0", "Los Lagos"),
+            AtajoCultivo("🍎", "Manzanas", "Manzana", "3.2", "Biobío")
+        )
+    }
 
     LaunchedEffect(state.success) {
         if (state.success) { viewModel.clearSuccess(); onSuccess() }
@@ -71,6 +83,36 @@ fun RegistroCultivoScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            
+            // Sugerencias rápidas (Atajos)
+            Text("Sugerencias rápidas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            androidx.compose.foundation.lazy.LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(sugerencias.size) { index ->
+                    val s = sugerencias[index]
+                    Card(
+                        onClick = {
+                            tipoCultivo = s.tipo
+                            hectareas = s.ha
+                            region = s.region
+                        },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Text(s.icono, fontSize = 24.sp)
+                            Spacer(Modifier.width(8.dp))
+                            Column {
+                                Text(s.titulo, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                                Text("${s.ha} ha · ${s.region}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            }
+
             Card(shape = RoundedCornerShape(12.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Información del cultivo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -150,6 +192,7 @@ fun RegistroCultivoScreen(
 @Composable
 fun CultivoScreen(
     onNavigateToRegistro: () -> Unit,
+    onNavigateToMapa: () -> Unit,
     onBack: () -> Unit,
     viewModel: CultivoViewModel = hiltViewModel()
 ) {
@@ -235,6 +278,16 @@ fun CultivoScreen(
                         }
                         Spacer(Modifier.height(8.dp))
                         Text("Etapa: ${cultivo.etapaActual.name}", color = Blanco.copy(0.9f), fontWeight = FontWeight.Medium)
+                        Spacer(Modifier.height(16.dp))
+                        Button(
+                            onClick = onNavigateToMapa,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface, contentColor = Verde60)
+                        ) {
+                            Icon(Icons.Default.Map, null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Ver en el mapa", fontWeight = FontWeight.SemiBold)
+                        }
                     }
                 }
 
@@ -295,6 +348,10 @@ fun CultivoScreen(
                         }
                     }
                 }
+                
+                Spacer(Modifier.height(16.dp))
+                // Gráfica de evolución histórica (Vico M3)
+                com.agrocontrol.presentation.ui.cultivo.RendimientoChart()
 
                 // Historial
                 if (state.historial.isNotEmpty()) {

