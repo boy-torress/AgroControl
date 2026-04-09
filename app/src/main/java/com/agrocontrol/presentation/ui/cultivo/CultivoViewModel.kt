@@ -16,6 +16,7 @@ data class CultivoUiState(
     val isLoadingPrediccion: Boolean = false,
     val error: String? = null,
     val success: Boolean = false,
+    val isLoading: Boolean = false,
     val userId: Long = 0L
 )
 

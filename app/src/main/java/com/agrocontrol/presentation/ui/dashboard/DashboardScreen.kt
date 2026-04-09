@@ -14,8 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,6 +27,19 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.agrocontrol.domain.model.Cultivo
 import com.agrocontrol.presentation.theme.*
 import java.util.Calendar
+
+private val DashBg        = Color(0xFF030F07)
+private val DashSurface   = Color(0xFF071409)
+private val DashCard      = Color(0xFF0C1E10)
+private val DashBorder    = Color(0xFF1A3A1F)
+private val GreenNeon     = Color(0xFF4ADE80)
+private val GreenDeep     = Color(0xFF166534)
+private val TextOnDark    = Color(0xFFF0FFF4)
+private val TextSubtle    = Color(0xFF86EFAC)
+private val TextMuted     = Color(0xFF4B7160)
+private val AmberAccent   = Color(0xFFF59E0B)
+private val BlueAccent    = Color(0xFF38BDF8)
+private val RedAccent     = Color(0xFFF87171)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,77 +58,69 @@ fun DashboardScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(DashBg)
             .verticalScroll(rememberScrollState())
     ) {
-        // ── Hero Header ────────────────────────────────────────────────────────
         DashboardHero(
-            userName   = state.userName,
-            alertasCount = state.alertasCount,
-            onAlertas  = onNavigateToAlertas,
-            onPerfil   = onNavigateToPerfil
+            userName      = state.userName,
+            alertasCount  = state.alertasCount,
+            onAlertas     = onNavigateToAlertas,
+            onPerfil      = onNavigateToPerfil
         )
 
-        // ── Clima card dinámica ────────────────────────────────────────────────
-        Box(Modifier.padding(horizontal = 16.dp)) {
+        Column(
+            modifier = Modifier.padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            Spacer(Modifier.height(4.dp))
+
+            // Clima card
             ClimaCardPremium(state = state, onClick = onNavigateToClima)
-        }
 
-        Spacer(Modifier.height(20.dp))
-
-        // ── Cultivo activo ─────────────────────────────────────────────────────
-        Column(Modifier.padding(horizontal = 16.dp)) {
-            SectionLabel("🌾 Tu Cultivo")
-            Spacer(Modifier.height(8.dp))
+            // Cultivo activo
+            DashSectionLabel("🌾 Tu Cultivo Activo")
+            Spacer(Modifier.height(-6.dp))
             CultivoActivoCardPremium(cultivo = state.cultivoActivo, onClick = onNavigateToCultivo)
-        }
 
-        Spacer(Modifier.height(20.dp))
-
-        // ── Accesos rápidos ────────────────────────────────────────────────────
-        Column(Modifier.padding(horizontal = 16.dp)) {
-            SectionLabel("⚡ Accesos rápidos")
-            Spacer(Modifier.height(10.dp))
+            // Quick access grid
+            DashSectionLabel("⚡ Accesos Rápidos")
+            Spacer(Modifier.height(-6.dp))
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 QuickCard(
-                    icon     = Icons.Outlined.Inventory2,
-                    label    = "Inventario",
-                    badge    = if (state.stockCriticoCount > 0) "${state.stockCriticoCount}" else null,
-                    color    = AzulInfo,
+                    icon    = Icons.Outlined.Inventory2,
+                    label   = "Inventario",
+                    badge   = if (state.stockCriticoCount > 0) "${state.stockCriticoCount}" else null,
+                    color   = BlueAccent,
                     modifier = Modifier.weight(1f),
-                    onClick  = onNavigateToInventario
+                    onClick = onNavigateToInventario
                 )
                 QuickCard(
-                    icon     = Icons.Outlined.NotificationsActive,
-                    label    = "Alertas",
-                    badge    = if (state.alertasCount > 0) "${state.alertasCount}" else null,
-                    color    = AmarilloAlert,
+                    icon    = Icons.Outlined.NotificationsActive,
+                    label   = "Alertas",
+                    badge   = if (state.alertasCount > 0) "${state.alertasCount}" else null,
+                    color   = AmberAccent,
                     modifier = Modifier.weight(1f),
-                    onClick  = onNavigateToAlertas
+                    onClick = onNavigateToAlertas
                 )
                 QuickCard(
-                    icon     = Icons.Outlined.Calculate,
-                    label    = "Calculadora",
-                    badge    = null,
-                    color    = VerdeAccent,
+                    icon    = Icons.Outlined.Calculate,
+                    label   = "ROI",
+                    badge   = null,
+                    color   = GreenNeon,
                     modifier = Modifier.weight(1f),
-                    onClick  = onNavigateToCalculadora
+                    onClick = onNavigateToCalculadora
                 )
             }
+
+            Spacer(Modifier.height(40.dp))
         }
-
-        Spacer(Modifier.height(20.dp))
-
-        // Offline banner now handled globally by MainScaffold
-
-        Spacer(Modifier.height(32.dp))
     }
 }
 
-// ─── Hero Header ──────────────────────────────────────────────────────────────
+// ─── Hero Header ───────────────────────────────────────────────────────────────
 @Composable
 private fun DashboardHero(
     userName: String,
@@ -126,169 +134,282 @@ private fun DashboardHero(
         hour < 18 -> "Buenas tardes"
         else      -> "Buenas noches"
     }
-    val gradiente = when {
-        hour in 6..11  -> listOf(Color(0xFF1B4332), Verde60)          // Mañana verde
-        hour in 12..17 -> listOf(Color(0xFF1E3A5F), AzulInfo)         // Tarde azul
-        else            -> listOf(Color(0xFF0D1117), Color(0xFF1F2937)) // Noche oscuro
+    val greetingEmoji = when {
+        hour < 12 -> "🌅"
+        hour < 18 -> "☀️"
+        else      -> "🌙"
     }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "hero")
+    val shimmer by infiniteTransition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(3500, easing = LinearEasing)),
+        label = "shimmer"
+    )
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Brush.verticalGradient(gradiente))
-            .padding(top = 48.dp, bottom = 28.dp, start = 20.dp, end = 20.dp)
-    ) {
-        Column {
-            Text(
-                greeting,
-                color = Blanco.copy(0.7f),
-                fontSize = 14.sp,
-                fontFamily = PlusJakartaSansFamily,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                userName.split(" ").firstOrNull() ?: "Agricultor",
-                color = Blanco,
-                fontSize = 28.sp,
-                fontFamily = PlusJakartaSansFamily,
-                fontWeight = FontWeight.ExtraBold
-            )
-        }
+            .drawBehind {
+                // Deep forest background
+                drawRect(Brush.verticalGradient(listOf(Color(0xFF071A0B), Color(0xFF040E06))))
 
-        // Acciones top-right
-        Row(
-            modifier = Modifier.align(Alignment.TopEnd),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            val ctx = androidx.compose.ui.platform.LocalContext.current
-            
-            // Botón Compartir PDF
-            IconButton(onClick = { 
-                // Esto es simulado como un Quick Export genérico de la sesión visible.
-                com.agrocontrol.domain.util.PdfGenerator.generateAndShareCultivoReport(
-                    context = ctx,
-                    cultivo = com.agrocontrol.domain.model.Cultivo(
-                        id = 0, agricultorId = 0, tipoCultivo = "Cultivo Activo", hectareas = 0.0, 
-                        fechaSiembra = System.currentTimeMillis(), region = "Mi Región", 
-                        etapaActual = com.agrocontrol.domain.model.EtapaCultivo.GERMINACION
-                    ),
-                    climaContexto = "Reporte climatológico extraído a las ${java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)}:00 hs.",
-                    alertasActivas = alertasCount,
-                    userName = userName
+                // Geometric accent lines
+                drawLine(
+                    Brush.horizontalGradient(listOf(Color.Transparent, GreenNeon.copy(0.25f), Color.Transparent)),
+                    start = Offset(0f, size.height * 0.9f),
+                    end   = Offset(size.width, size.height * 0.9f),
+                    strokeWidth = 1f
                 )
-            }) {
-                Icon(Icons.Default.PictureAsPdf, null, tint = Blanco)
-            }
-            
-            // Botón alertas con badge
-            BadgedBox(
-                badge = {
-                    if (alertasCount > 0) Badge(containerColor = RojoAlert) {
-                        Text("$alertasCount", fontSize = 10.sp)
-                    }
-                }
-            ) {
-                IconButton(onClick = onAlertas) {
-                    Icon(Icons.Default.Notifications, null, tint = Blanco)
-                }
-            }
-            // Botón perfil
-            IconButton(onClick = onPerfil) {
-                Box(
-                    Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(Blanco.copy(0.2f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Person, null, tint = Blanco, modifier = Modifier.size(18.dp))
-                }
-            }
-        }
-    }
-}
 
-// ─── Clima card premium con gradiente dinámico ────────────────────────────────
-@Composable
-fun ClimaCardPremium(state: DashboardUiState, onClick: () -> Unit) {
-    val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-    val gradiente = when {
-        hour in 6..11  -> listOf(Color(0xFF1B6CA8), Color(0xFF2196F3))
-        hour in 12..17 -> listOf(Color(0xFF0D47A1), Color(0xFF1565C0))
-        else            -> listOf(Color(0xFF0D1117), Color(0xFF1E3A5F))
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+                // Ambient glow top-left
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(Color(0xFF14532D).copy(0.5f), Color.Transparent),
+                        center = Offset(0f, 0f),
+                        radius = size.width * 0.6f
+                    ),
+                    radius = size.width * 0.6f,
+                    center = Offset(0f, 0f)
+                )
+            }
+            .padding(top = 52.dp, bottom = 24.dp, start = 20.dp, end = 20.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.horizontalGradient(gradiente))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
         ) {
-            if (state.isLoadingClima && state.clima == null) {
-                com.agrocontrol.presentation.ui.components.ShimmerClimaCard()
-            } else {
-                state.clima?.let { c ->
-                    Row(
-                        Modifier.fillMaxWidth().padding(20.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Clima ahora", color = Blanco.copy(0.7f),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontFamily = PlusJakartaSansFamily)
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                Text("${c.temperatura}",
-                                    color = Blanco, fontSize = 52.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontFamily = PlusJakartaSansFamily)
-                                Text("°C", color = Blanco.copy(0.8f), fontSize = 22.sp,
-                                    fontFamily = PlusJakartaSansFamily,
-                                    modifier = Modifier.padding(bottom = 10.dp))
-                            }
-                            Text(c.descripcion, color = Blanco.copy(0.85f),
-                                fontFamily = PlusJakartaSansFamily,
-                                fontWeight = FontWeight.Medium)
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(c.icono, fontSize = 48.sp)
-                            Spacer(Modifier.height(8.dp))
-                            ClimaChip("💧 ${c.humedad}%")
-                            Spacer(Modifier.height(4.dp))
-                            ClimaChip("💨 ${c.viento} km/h")
-                        }
-                    }
-                } ?: Box(Modifier.fillMaxWidth().padding(20.dp)) {
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(greetingEmoji, fontSize = 16.sp)
+                    Spacer(Modifier.width(6.dp))
                     Text(
-                        "Registra un cultivo para ver el clima de tu región",
-                        color = Blanco,
-                        fontFamily = PlusJakartaSansFamily
+                        greeting,
+                        color = TextSubtle.copy(0.7f),
+                        fontSize = 13.sp,
+                        fontFamily = PlusJakartaSansFamily,
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.5.sp
                     )
                 }
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    userName.split(" ").firstOrNull() ?: "Agricultor",
+                    color = TextOnDark,
+                    fontSize = 30.sp,
+                    fontFamily = PlusJakartaSansFamily,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-0.5).sp
+                )
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+
+                IconButton(
+                    onClick = {
+                        com.agrocontrol.domain.util.PdfGenerator.generateAndShareCultivoReport(
+                            context = ctx,
+                            cultivo = com.agrocontrol.domain.model.Cultivo(
+                                id = 0, agricultorId = 0, tipoCultivo = "Cultivo Activo",
+                                hectareas = 0.0, fechaSiembra = System.currentTimeMillis(),
+                                region = "Mi Región",
+                                etapaActual = com.agrocontrol.domain.model.EtapaCultivo.GERMINACION
+                            ),
+                            climaContexto = "Reporte ${Calendar.getInstance().get(Calendar.HOUR_OF_DAY)}:00 hs.",
+                            alertasActivas = alertasCount,
+                            userName = userName
+                        )
+                    },
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color(0xFF0F2714), CircleShape)
+                ) {
+                    Icon(Icons.Default.PictureAsPdf, null, tint = TextSubtle.copy(0.7f), modifier = Modifier.size(18.dp))
+                }
+
+                BadgedBox(
+                    badge = {
+                        if (alertasCount > 0) Badge(
+                            containerColor = RedAccent,
+                            contentColor = Color.White
+                        ) { Text("$alertasCount", fontSize = 9.sp) }
+                    }
+                ) {
+                    IconButton(
+                        onClick = onAlertas,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(Color(0xFF0F2714), CircleShape)
+                    ) {
+                        Icon(Icons.Default.Notifications, null, tint = AmberAccent, modifier = Modifier.size(20.dp))
+                    }
+                }
+
+                IconButton(
+                    onClick = onPerfil,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            Brush.radialGradient(listOf(GreenDeep, Color(0xFF052E16))),
+                            CircleShape
+                        )
+                ) {
+                    Icon(Icons.Default.Person, null, tint = GreenNeon, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+    }
+}
+
+// ─── Clima Card Premium ────────────────────────────────────────────────────────
+@Composable
+fun ClimaCardPremium(state: DashboardUiState, onClick: () -> Unit) {
+    val c = state.clima
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .clickable(onClick = onClick)
+            .drawBehind {
+                val hours = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+                val grad = when {
+                    hours in 6..11  -> listOf(Color(0xFF0D3B1C), Color(0xFF0A2F18))
+                    hours in 12..17 -> listOf(Color(0xFF0B1E3B), Color(0xFF0A1A30))
+                    else            -> listOf(Color(0xFF0A0D18), Color(0xFF080C15))
+                }
+                drawRect(Brush.verticalGradient(grad))
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(GreenNeon.copy(0.12f), Color.Transparent),
+                        center = Offset(size.width * 0.1f, size.height * 0.3f),
+                        radius = size.width * 0.4f
+                    ),
+                    radius = size.width * 0.4f,
+                    center = Offset(size.width * 0.1f, size.height * 0.3f)
+                )
+            }
+    ) {
+        if (c != null) {
+            Row(
+                modifier = Modifier.padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.LocationOn, null, tint = GreenNeon.copy(0.7f), modifier = Modifier.size(12.dp))
+                        Spacer(Modifier.width(3.dp))
+                        Text(
+                            state.cultivoActivo?.region ?: "Sin Región",
+                            color = TextSubtle.copy(0.7f),
+                            fontSize = 11.sp,
+                            fontFamily = PlusJakartaSansFamily,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            "${c.temperatura}",
+                            color = TextOnDark,
+                            fontSize = 64.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = PlusJakartaSansFamily,
+                            lineHeight = 64.sp
+                        )
+                        Text(
+                            "°C",
+                            color = GreenNeon.copy(0.8f),
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Light,
+                            fontFamily = PlusJakartaSansFamily,
+                            modifier = Modifier.padding(bottom = 10.dp)
+                        )
+                    }
+                    Text(
+                        c.descripcion,
+                        color = TextSubtle.copy(0.85f),
+                        fontSize = 13.sp,
+                        fontFamily = PlusJakartaSansFamily
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MiniClimaChip("💧", "${c.humedad}%")
+                        MiniClimaChip("💨", "${c.viento} km/h")
+                    }
+                }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(c.icono, fontSize = 56.sp)
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = GreenNeon.copy(0.12f)
+                    ) {
+                        Row(
+                            Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Ver más", color = GreenNeon, fontSize = 10.sp, fontFamily = PlusJakartaSansFamily)
+                            Icon(Icons.Default.ChevronRight, null, tint = GreenNeon, modifier = Modifier.size(12.dp))
+                        }
+                    }
+                }
+            }
+        } else {
+            Row(
+                Modifier.fillMaxWidth().padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("🌤️", fontSize = 32.sp)
+                Spacer(Modifier.width(14.dp))
+                Text(
+                    "Registra un cultivo para ver el clima de tu región",
+                    color = TextSubtle.copy(0.7f),
+                    fontFamily = PlusJakartaSansFamily,
+                    fontSize = 14.sp
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ClimaChip(text: String) {
-    Surface(shape = RoundedCornerShape(8.dp), color = Blanco.copy(0.2f)) {
-        Text(text, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-            color = Blanco, fontSize = 11.sp, fontFamily = PlusJakartaSansFamily)
+private fun MiniClimaChip(emoji: String, value: String) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color.White.copy(0.07f)
+    ) {
+        Text(
+            "$emoji $value",
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            color = TextOnDark.copy(0.85f),
+            fontSize = 11.sp,
+            fontFamily = PlusJakartaSansFamily
+        )
     }
 }
 
-// ─── Cultivo Card Premium ─────────────────────────────────────────────────────
+// ─── Cultivo Card ──────────────────────────────────────────────────────────────
 @Composable
 fun CultivoActivoCardPremium(cultivo: Cultivo?, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .clickable(onClick = onClick)
+            .background(DashCard)
+            .drawBehind {
+                drawLine(
+                    color = DashBorder,
+                    start = Offset(0f, 0f),
+                    end = Offset(size.width, 0f),
+                    strokeWidth = 1f
+                )
+            }
     ) {
         if (cultivo == null) {
             Row(
@@ -296,142 +417,163 @@ fun CultivoActivoCardPremium(cultivo: Cultivo?, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
-                    Modifier.size(52.dp).clip(RoundedCornerShape(14.dp))
-                        .background(Verde60.copy(0.1f)),
+                    Modifier.size(52.dp).clip(RoundedCornerShape(16.dp)).background(GreenNeon.copy(0.08f)),
                     contentAlignment = Alignment.Center
                 ) { Text("🌱", fontSize = 26.sp) }
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Sin cultivo activo", fontWeight = FontWeight.SemiBold,
-                        fontFamily = PlusJakartaSansFamily)
-                    Text("Toca para registrar tu primer cultivo →",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Verde60, fontFamily = PlusJakartaSansFamily)
+                    Text("Sin cultivo activo", fontWeight = FontWeight.SemiBold, color = TextOnDark, fontFamily = PlusJakartaSansFamily)
+                    Text("Toca para registrar tu primer cultivo", fontSize = 12.sp, color = GreenNeon, fontFamily = PlusJakartaSansFamily)
                 }
-                Icon(Icons.Default.ChevronRight, null,
-                    tint = MaterialTheme.colorScheme.onSurface.copy(0.3f))
+                Icon(Icons.Default.ChevronRight, null, tint = TextMuted)
             }
         } else {
             Column(Modifier.padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        Modifier.size(52.dp).clip(RoundedCornerShape(14.dp))
-                            .background(Brush.radialGradient(listOf(VerdeAccent, Verde60))),
+                        Modifier.size(52.dp).clip(RoundedCornerShape(16.dp))
+                            .background(Brush.linearGradient(listOf(Color(0xFF166534), Color(0xFF15803D)))),
                         contentAlignment = Alignment.Center
-                    ) { Text("🌾", fontSize = 26.sp) }
+                    ) { Text("🌾", fontSize = 24.sp) }
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(cultivo.tipoCultivo, fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp, color = Verde60,
-                            fontFamily = PlusJakartaSansFamily)
-                        Text("${cultivo.region} · ${cultivo.hectareas} ha",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(0.6f),
-                            fontFamily = PlusJakartaSansFamily)
+                        Text(
+                            cultivo.tipoCultivo,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 18.sp,
+                            color = GreenNeon,
+                            fontFamily = PlusJakartaSansFamily
+                        )
+                        Text(
+                            "${cultivo.region} · ${cultivo.hectareas} ha",
+                            fontSize = 12.sp,
+                            color = TextMuted,
+                            fontFamily = PlusJakartaSansFamily
+                        )
                     }
-                    Icon(Icons.Default.ChevronRight, null,
-                        tint = MaterialTheme.colorScheme.onSurface.copy(0.3f))
+                    Icon(Icons.Default.ChevronRight, null, tint = TextMuted, modifier = Modifier.size(20.dp))
                 }
-                Spacer(Modifier.height(14.dp))
-                // Barra de progreso de etapa
+
+                Spacer(Modifier.height(16.dp))
+
                 val etapas = com.agrocontrol.domain.model.EtapaCultivo.values()
-                val idx    = etapas.indexOf(cultivo.etapaActual)
+                val idx = etapas.indexOf(cultivo.etapaActual)
                 val progress by animateFloatAsState(
                     targetValue = (idx + 1).toFloat() / etapas.size,
-                    animationSpec = tween(800, easing = FastOutSlowInEasing),
-                    label = "etapa_progress"
+                    animationSpec = tween(900, easing = FastOutSlowInEasing),
+                    label = "etapa"
                 )
+
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Etapa: ${cultivo.etapaActual.name}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(0.6f),
-                        fontFamily = PlusJakartaSansFamily)
-                    Text("${idx + 1}/${etapas.size}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Verde60, fontFamily = PlusJakartaSansFamily,
-                        fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Etapa: ${cultivo.etapaActual.name}",
+                        fontSize = 11.sp,
+                        color = TextMuted,
+                        fontFamily = PlusJakartaSansFamily
+                    )
+                    Text(
+                        "${idx + 1} / ${etapas.size}",
+                        fontSize = 11.sp,
+                        color = GreenNeon,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = PlusJakartaSansFamily
+                    )
                 }
                 Spacer(Modifier.height(6.dp))
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                    color = Verde60,
-                    trackColor = Verde60.copy(0.15f)
-                )
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape)
+                        .background(GreenNeon.copy(0.1f))
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxHeight().fillMaxWidth(progress).clip(CircleShape)
+                            .background(Brush.horizontalGradient(listOf(Color(0xFF4ADE80), Color(0xFF22C55E))))
+                    )
+                }
             }
         }
     }
 }
 
-// ─── Quick access card ────────────────────────────────────────────────────────
+// ─── Quick Card ────────────────────────────────────────────────────────────────
 @Composable
 fun QuickCard(
-    icon: ImageVector, label: String, badge: String?,
-    color: Color, modifier: Modifier, onClick: () -> Unit
+    icon: ImageVector,
+    label: String,
+    badge: String?,
+    color: Color,
+    modifier: Modifier,
+    onClick: () -> Unit
 ) {
-    Card(
-        modifier = modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
+            .background(DashCard)
+            .drawBehind {
+                drawLine(color = DashBorder, start = Offset(0f, 0f), end = Offset(size.width, 0f), strokeWidth = 1f)
+            }
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
     ) {
         Column(
-            Modifier.padding(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             BadgedBox(badge = {
-                if (badge != null) Badge(containerColor = RojoAlert) {
-                    Text(badge, fontSize = 9.sp)
+                if (badge != null) Badge(containerColor = RedAccent, contentColor = Color.White) {
+                    Text(badge, fontSize = 8.sp, fontFamily = PlusJakartaSansFamily)
                 }
             }) {
                 Box(
-                    Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
-                        .background(color.copy(0.12f)),
+                    Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(color.copy(0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
                 }
             }
-            Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+            Text(
+                label,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
                 fontFamily = PlusJakartaSansFamily,
-                color = MaterialTheme.colorScheme.onSurface)
+                color = TextSubtle.copy(0.8f)
+            )
         }
     }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 @Composable
-fun SectionLabel(text: String) {
-    Text(text, fontWeight = FontWeight.Bold, fontSize = 15.sp,
+fun DashSectionLabel(text: String) {
+    Text(
+        text,
+        fontWeight = FontWeight.Bold,
+        fontSize = 14.sp,
         fontFamily = PlusJakartaSansFamily,
-        color = MaterialTheme.colorScheme.onBackground)
+        color = TextSubtle.copy(0.7f),
+        letterSpacing = 0.3.sp
+    )
 }
 
-// Keep backwards compatibility aliases
+// Backwards-compat aliases
 @Composable
-fun ClimaCard(state: DashboardUiState, onClick: () -> Unit, onRefresh: () -> Unit = {}) =
-    ClimaCardPremium(state, onClick)
+fun SectionLabel(text: String) = DashSectionLabel(text)
 
 @Composable
-fun CultivoActivoCard(cultivo: Cultivo?, onClick: () -> Unit) =
-    CultivoActivoCardPremium(cultivo, onClick)
+fun ClimaCard(state: DashboardUiState, onClick: () -> Unit, onRefresh: () -> Unit = {}) = ClimaCardPremium(state, onClick)
+
+@Composable
+fun CultivoActivoCard(cultivo: Cultivo?, onClick: () -> Unit) = CultivoActivoCardPremium(cultivo, onClick)
 
 @Composable
 fun InfoChip(text: String) {
-    Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+    Surface(shape = RoundedCornerShape(8.dp), color = GreenNeon.copy(0.1f)) {
         Text(text, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall, fontFamily = PlusJakartaSansFamily)
+            style = MaterialTheme.typography.labelSmall, fontFamily = PlusJakartaSansFamily, color = GreenNeon)
     }
 }
 
 @Composable
-fun QuickAccessCard(
-    icon: ImageVector, title: String, subtitle: String,
-    hasAlert: Boolean, modifier: Modifier, onClick: () -> Unit
-) = QuickCard(
-    icon = icon, label = title,
-    badge = if (hasAlert) "!" else null,
-    color = if (hasAlert) RojoAlert else AzulInfo,
-    modifier = modifier, onClick = onClick
-)
+fun QuickAccessCard(icon: ImageVector, title: String, subtitle: String, hasAlert: Boolean, modifier: Modifier, onClick: () -> Unit) =
+    QuickCard(icon = icon, label = title, badge = if (hasAlert) "!" else null,
+        color = if (hasAlert) RedAccent else BlueAccent, modifier = modifier, onClick = onClick)

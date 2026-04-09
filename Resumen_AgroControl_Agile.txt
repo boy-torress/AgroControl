@@ -1,0 +1,82 @@
+================================================================================
+          RESUMEN COMPLETO DEL PROYECTO AGROCONTROL PARA METODOLOGÍA ÁGIL
+================================================================================
+
+1. DESCRIPCIÓN GENERAL DEL PROYECTO
+-----------------------------------
+AgroControl es una aplicación móvil Android orientada a pequeños y medianos agricultores de Chile. 
+Su objetivo principal es reducir las pérdidas productivas facilitando la toma de decisiones 
+sobre siembra, monitoreo y mitigación de riesgos agrarios utilizando datos en tiempo real.
+
+Stack Tecnológico y Arquitectura:
+- Lenguaje: Kotlin.
+- Arquitectura: MVVM (Model-View-ViewModel) + Clean Architecture con Jetpack Compose.
+- Base de Datos Local: Room (Para registrar etapas, insumos y alertas con persistencia y diseño "offline-first").
+- Backend / Servicios en la Nube: Firebase (Gestiona configuración y autenticación).
+- Integración API Climática: Open-Meteo (Clima en tiempo real y pronósticos a 7 días, gratuito).
+- GIS y Mapeo: Mapbox (Mapas premium, cámara 3D, seguimiento geolocalizado de parcelas).
+- Inteligencia Artificial: Algoritmos para predecir el rendimiento (kg/ha) y recomendar cultivos.
+- Generación de Reportes: Creación de reportes PDF personalizados.
+
+2. ROLES DE USUARIO
+-------------------
+El sistema soporta interactuar bajo tres perfiles distintos:
+- Agricultor: Es el usuario principal. Gestiona su campo, registra cultivos, anota insumos y recibe alertas.
+- Agrónomo: Usuario asesor. Monitorea de forma remota a los agricultores asociados para dar asesoría.
+- Administrador: Supervisa todo el sistema, gestiona el backend y tiene visibilidad global de la operación.
+
+3. STAKEHOLDERS (PARTES INTERESADAS - MATRIZ PODER/INTERÉS)
+-----------------------------------------------------------
+- Pequeños Agricultores (Alto Poder / Alto Interés): Usuarios finales; el éxito de la app depende de que la usen realmente.
+- Ingenieros Agrónomos (Alto Poder / Alto Interés): Deciden si recomiendan la app a sus clientes para modernizar flujos.
+- Equipo de Desarrollo (Alto Poder / Alto Interés): Diseñan y construyen la app.
+- INDAP / Instituciones Estatales (Alto Poder / Bajo Interés): Pueden financiar/apoyar el proyecto basándose en KPIs.
+- Proveedores (API Open-Meteo) (Bajo Poder / Alto Interés): Proveen los datos meteorológicos vitales.
+- Administradores del Sistema (Bajo Poder / Alto Interés): Operan la trazabilidad, bases de datos y métricas.
+
+4. HISTORIAS DE USUARIO (HU) Y PRODUCT BACKLOG PRIORIZADO
+---------------------------------------------------------
+Todas las historias fueron redactadas bajo el estándar INVEST (Independientes, Negociables, Valiosas, Estimables, Pequeñas, Testables).
+
+Orden de Prioridad de Implementación (Product Backlog):
+1.  HU-06: Registro de cuenta de nuevo agricultor (Solo rol de agricultor por defecto).
+2.  HU-07: Inicio de sesión con rol (Redirección automática dependiendo del rol registrado).
+3.  HU-08: Dashboard principal con resumen de estado (Clima del día, cultivo activo, alertas).
+4.  HU-02: Registro de cultivo activo (Tipo, de cultivo, superficie en hectáreas, fecha y región).
+5.  HU-09: Consulta de clima y pronóstico semanal (Integración con API rest Open-Meteo).
+6.  HU-03: Actualización de la etapa del cultivo (Trazabilidad: Siembra, floración, cosecha, etc.).
+7.  HU-10: Recomendador de cultivos según perfil geográfico del campo (Algoritmo IA automatizado por región).
+8.  HU-01: Predicción de rendimiento (Estimación de kg/ha basada en datos actuales de la parcela).
+9.  HU-11: Gestión de inventario de insumos (Guardado local en la BD Room para control de fertilizantes y stock).
+10. HU-12: Alertas automáticas ante condiciones extremas (El sistema cruza la etapa del cultivo con clima adverso).
+11. HU-04: Visualización para el agrónomo (Acceso de solo lectura a sus agricultores y cultivos para monitorio remoto).
+12. HU-05: Panel de administración del sistema (Vista global del negocio, exportable en reportes, filtrado de datos).
+
+5. SPRINT BACKLOG (PLANIFICACIÓN DE SPRINTS)
+--------------------------------------------
+Duración del ciclo Ágil: 4 Sprints (Sprints de 2 semanas continuas cada uno).
+Fecha de entrega final pactada: Segunda semana de julio.
+
+* Sprint 1 (18 Mayo - 31 Mayo) / "Fundamentos y Base de Datos"
+  - Backlog de Sprint: HU-06, HU-07, HU-08, HU-02.
+  - Meta de Sprint: Cimentar la base de datos local Room, arquitectura ViewModel y el sistema de Autenticación. UI Base del Dashboard.
+
+* Sprint 2 (1 Junio - 14 Junio) / "Datos, API Clima e Inteligencia Lógica"
+  - Backlog de Sprint: HU-09, HU-03, HU-10, HU-01.
+  - Meta de Sprint: Integración en red de la App (cliente Retrofit con Open-Meteo), iteración del ciclo de vida del cultivo y cálculos de los algoritmos y IA (Recomendaciones y Predicción).
+
+* Sprint 3 (15 Junio - 28 Junio) / "Gestión, Operaciones y Mapas Premium"
+  - Backlog de Sprint: HU-12, HU-11, HU-04.
+  - Meta de Sprint: Interfaz gráfica moderna (Glassmorphism), inventario persistente, sistema cruzado de alertas (clima/cultivo), mapas y ubicación vía Mapbox y panel del Agrónomo.
+
+* Sprint 4 (29 Junio - 12 Julio) / "Consolidación, Reportes y QA Final"
+  - Backlog de Sprint: HU-05.
+  - Meta de Sprint: Sistema administrativo, diseño de reportes / generación PDF, pulido de notificaciones y modo offline-first, pruebas de calidad y empaquetado para la entrega final.
+
+================================================================================
+TIPS PARA TU TRABAJO (Construir de "Adelante para Atrás"):
+- Tienes la fecha final establecida (Entrega: mediados de julio).
+- Tienes definidos tus 4 bloques de tiempo (Sprints) que duran 2 semanas exactas.
+- Tienes todas tus tareas divididas exactamente en los bloques de Scrum (Product Backlog -> Sprint Backlog).
+- Con esto puedes armar tu Trello/Jira, retrospectivas, y diagramas Gantt o Burndown charts restando los días desde el 12 de julio en retrospectiva hacia el inicio (18 de mayo).
+================================================================================

@@ -110,7 +110,7 @@ dependencies {
     implementation("com.patrykandpatrick.vico:compose:1.15.0")
 
     // Firebase (Crashlytics)
-    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-analytics")
 
